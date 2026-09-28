@@ -4,3 +4,6 @@ node_modules
 GYM-Management-System
 Gym Management System Proposal.md
 *.mjs
+*.md
+!./README.md
+*.sh
