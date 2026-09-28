@@ -5,7 +5,9 @@ import DashboardPage from "../pages/dashboard/DashboardPage";
 import MembersListPage from "../pages/members/MembersListPage";
 import MemberDetailsPage from "../pages/members/MemberDetailsPage";
 import TrainersListPage from "../pages/trainers/TrainersListPage";
+import TrainerDetailsPage from "../pages/trainers/TrainerDetailsPage";
 import MembershipsPage from "../pages/memberships/MembershipsPage";
+import MembershipDetailsPage from "../pages/memberships/MembershipDetailsPage";
 import SessionsPage from "../pages/sessions/SessionsPage";
 import UsersListPage from "../pages/users/UsersListPage";
 import UserDetailsPage from "../pages/users/UserDetailsPage";
@@ -32,7 +34,9 @@ export const AppRoutes = () => {
         <Route path="/members" element={<MembersListPage />} />
         <Route path="/members/:id" element={<MemberDetailsPage />} />
         <Route path="/trainers" element={<TrainersListPage />} />
+        <Route path="/trainers/:id" element={<TrainerDetailsPage />} />
         <Route path="/memberships" element={<MembershipsPage />} />
+        <Route path="/memberships/:id" element={<MembershipDetailsPage />} />
         <Route path="/sessions" element={<SessionsPage />} />
         <Route
           path="/users"

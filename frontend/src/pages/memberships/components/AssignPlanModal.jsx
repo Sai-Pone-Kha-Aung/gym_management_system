@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Modal from "../../../components/ui/Modal";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
@@ -13,55 +13,56 @@ export const AssignPlanModal = ({
   loading = false,
 }) => {
   const [formData, setFormData] = useState({
-    memberId: "",
-    planName: "",
-    price: "",
-    startDate: new Date().toISOString().split("T")[0],
-    endDate: "",
-    status: "Active",
+    member_id: "",
+    plan_id: "",
+    payment_method: "CASH",
+    payment_status: "PAID",
+    amount: "",
+    payment_date: new Date().toISOString().split("T")[0],
   });
 
   useEffect(() => {
     if (isOpen) {
       const defaultMember = members[0]?._id || "";
-      const defaultPlan = plans[0]?.name || "Monthly Basic";
+      const defaultPlan = plans[0]?._id || "";
       const defaultPrice = plans[0]?.price || 49;
-      const start = new Date();
-      const end = new Date();
-      end.setDate(start.getDate() + 30);
 
       setFormData({
-        memberId: defaultMember,
-        planName: defaultPlan,
-        price: defaultPrice,
-        startDate: start.toISOString().split("T")[0],
-        endDate: end.toISOString().split("T")[0],
-        status: "Active",
+        member_id: defaultMember,
+        plan_id: defaultPlan,
+        payment_method: "CASH",
+        payment_status: "PAID",
+        amount: defaultPrice,
+        payment_date: new Date().toISOString().split("T")[0],
       });
     }
   }, [isOpen, members, plans]);
 
   const handlePlanChange = (e) => {
-    const selectedPlanName = e.target.value;
-    const plan = plans.find((p) => p.name === selectedPlanName);
-    const start = new Date(formData.startDate || new Date());
-    const end = new Date(start);
-    const durationDays = plan?.durationDays || 30;
-    end.setDate(start.getDate() + durationDays);
+    const selectedPlanId = e.target.value;
+    const plan = plans.find((p) => p._id === selectedPlanId);
 
     setFormData((prev) => ({
       ...prev,
-      planName: selectedPlanName,
-      price: plan ? plan.price : prev.price,
-      endDate: end.toISOString().split("T")[0],
+      plan_id: selectedPlanId,
+      amount: plan ? plan.price : prev.amount,
     }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.member_id || !formData.plan_id) {
+      alert("Please select both a member and a membership plan.");
+      return;
+    }
+
     onSubmit({
-      ...formData,
-      price: Number(formData.price) || 0,
+      member_id: formData.member_id,
+      plan_id: formData.plan_id,
+      payment_method: formData.payment_method,
+      amount: Number(formData.amount) || 0,
+      payment_status: formData.payment_status,
+      payment_date: formData.payment_date,
     });
   };
 
@@ -69,12 +70,12 @@ export const AssignPlanModal = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Assign Membership Plan">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Select
-          id="memberId"
+          id="member_id"
           label="Select Member"
           required
-          value={formData.memberId}
+          value={formData.member_id}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, memberId: e.target.value }))
+            setFormData((prev) => ({ ...prev, member_id: e.target.value }))
           }
           options={members.map((m) => ({
             value: m._id,
@@ -82,63 +83,81 @@ export const AssignPlanModal = ({
           }))}
         />
 
+        <Select
+          id="plan_id"
+          label="Select Plan Tier"
+          required
+          value={formData.plan_id}
+          onChange={handlePlanChange}
+          options={plans.map((p) => ({
+            value: p._id,
+            label: `${p.plan_name || p.name} — $${p.price} (${p.duration_in_days || p.durationDays || 30} days)`,
+          }))}
+        />
+
         <div className="grid grid-cols-2 gap-4">
           <Input
-            id="planName"
-            label="Plan Name"
-            required
-            value={formData.planName}
-            onChange={handlePlanChange}
-            placeholder="e.g. Monthly Basic"
-          />
-          <Input
-            id="price"
-            label="Price ($)"
+            id="amount"
+            label="Amount / Price ($)"
             type="number"
             min="0"
             required
-            value={formData.price}
+            value={formData.amount}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, price: e.target.value }))
+              setFormData((prev) => ({ ...prev, amount: e.target.value }))
+            }
+          />
+          <Input
+            id="payment_date"
+            label="Payment Date"
+            type="date"
+            required
+            value={formData.payment_date}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                payment_date: e.target.value,
+              }))
             }
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Input
-            id="startDate"
-            label="Start Date"
-            type="date"
-            required
-            value={formData.startDate}
+          <Select
+            id="payment_method"
+            label="Payment Method"
+            value={formData.payment_method}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, startDate: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                payment_method: e.target.value,
+              }))
             }
+            options={[
+              { value: "CASH", label: "Cash" },
+              { value: "CREDIT_CARD", label: "Credit Card" },
+              { value: "DEBIT_CARD", label: "Debit Card" },
+              { value: "BANK_TRANSFER", label: "Bank Transfer" },
+              { value: "QR_CODE", label: "QR Code" },
+            ]}
           />
-          <Input
-            id="endDate"
-            label="End Date"
-            type="date"
-            required
-            value={formData.endDate}
+
+          <Select
+            id="payment_status"
+            label="Payment Status"
+            value={formData.payment_status}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                payment_status: e.target.value,
+              }))
             }
+            options={[
+              { value: "PAID", label: "Paid" },
+              { value: "PENDING", label: "Pending" },
+            ]}
           />
         </div>
-
-        <Select
-          id="status"
-          label="Initial Status"
-          value={formData.status}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, status: e.target.value }))
-          }
-          options={[
-            { value: "Active", label: "Active" },
-            { value: "Pending", label: "Pending" },
-          ]}
-        />
 
         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
           <Button variant="secondary" onClick={onClose} disabled={loading}>

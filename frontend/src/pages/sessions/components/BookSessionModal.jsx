@@ -18,8 +18,9 @@ export const BookSessionModal = ({
     date: new Date().toISOString().split("T")[0],
     startTime: "09:00",
     duration: 60,
-    status: "Scheduled",
+    status: "SCHEDULED",
   });
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -29,22 +30,45 @@ export const BookSessionModal = ({
         date: new Date().toISOString().split("T")[0],
         startTime: "09:00",
         duration: 60,
-        status: "Scheduled",
+        status: "SCHEDULED",
       });
+      setError("");
     }
   }, [isOpen, members, trainers]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      duration: Number(formData.duration) || 60,
-    });
+    setError("");
+
+    if (!formData.memberId) {
+      setError("Please select a member.");
+      return;
+    }
+    if (!formData.trainerId) {
+      setError("Please select a trainer.");
+      return;
+    }
+
+    try {
+      await onSubmit({
+        ...formData,
+        status: formData.status || "SCHEDULED",
+        duration: Number(formData.duration) || 60,
+      });
+    } catch (err) {
+      setError(err.message || "Failed to schedule session");
+    }
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Book Training Session">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {error && (
+          <div className="p-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
+            {error}
+          </div>
+        )}
+
         <Select
           id="memberId"
           label="Select Member"

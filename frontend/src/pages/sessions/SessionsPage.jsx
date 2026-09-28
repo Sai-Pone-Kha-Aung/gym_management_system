@@ -29,14 +29,30 @@ export const SessionsPage = () => {
       ]);
 
       setSessions(
-        Array.isArray(sessionsRes) ? sessionsRes : sessionsRes?.sessions || []
+        Array.isArray(sessionsRes.training_sessions)
+          ? sessionsRes.training_sessions
+          : [],
       );
-      setMembers(
-        Array.isArray(membersRes) ? membersRes : membersRes?.members || []
-      );
+      setMembers(Array.isArray(membersRes.members) ? membersRes.members : []);
       setTrainers(
-        Array.isArray(trainersRes) ? trainersRes : trainersRes?.trainers || []
+        Array.isArray(trainersRes.trainers) ? trainersRes.trainers : [],
       );
+
+      const trainingSessions = new Array();
+
+      sessionsRes.training_sessions.forEach((session) => {
+        trainingSessions.push({
+          ...session,
+          member: membersRes.members.find(
+            (member) => member._id === session.memberId,
+          ),
+          trainer: trainersRes.trainers.find(
+            (trainer) => trainer._id === session.trainerId,
+          ),
+        });
+      });
+
+      setSessions(trainingSessions);
     } catch (err) {
       console.error("Failed to load training sessions data:", err);
     } finally {
@@ -54,8 +70,6 @@ export const SessionsPage = () => {
       await trainingSessionsApi.create(formData);
       setIsBookOpen(false);
       loadData();
-    } catch (err) {
-      alert(err.message || "Failed to schedule session (e.g., trainer conflict or expired membership)");
     } finally {
       setActionLoading(false);
     }
@@ -105,10 +119,10 @@ export const SessionsPage = () => {
       render: (row) => (
         <div>
           <span className="font-medium text-gray-900 block">
-            {row.memberId?.name || row.memberName || "Member"}
+            {row.member?.name || "Member"}
           </span>
           <span className="text-xs text-gray-500">
-            {row.memberId?.phone || ""}
+            {row.member?.phone || ""}
           </span>
         </div>
       ),
@@ -116,43 +130,49 @@ export const SessionsPage = () => {
     {
       header: "Trainer",
       accessor: "trainerId",
-      render: (row) => (
-        <div>
-          <span className="font-medium text-gray-800 block">
-            {row.trainerId?.name || row.trainerName || "Trainer"}
-          </span>
-          <span className="text-xs text-gray-500">
-            {row.trainerId?.specialization || ""}
-          </span>
-        </div>
-      ),
+      render: (row) => {
+        const spec = Array.isArray(row.trainer?.specialization)
+          ? row.trainer?.specialization.join(", ")
+          : row.trainer?.specialization;
+
+        return (
+          <div>
+            <span className="font-medium text-gray-800 block">
+              {row.trainer?.name || "Trainer"}
+            </span>
+            <span className="text-xs text-gray-500">{spec || ""}</span>
+          </div>
+        );
+      },
     },
     {
       header: "Status",
       accessor: "status",
-      render: (row) => <Badge status={row.status || "Scheduled"} />,
+      render: (row) => <Badge status={row.status || "SCHEDULED"} />,
     },
     {
       header: "Actions",
       accessor: "_id",
       render: (row) => (
         <div className="flex items-center gap-2">
-          {row.status === "Scheduled" && (
+          {(row.status === "SCHEDULED" || row.status === "Scheduled") && (
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => handleStatusChange(row._id, "Completed")}
+              onClick={() => handleStatusChange(row._id, "COMPLETED")}
             >
               Complete
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => setCancelTarget(row)}
-          >
-            Cancel
-          </Button>
+          {row.status !== "CANCELLED" && row.status !== "Cancelled" && (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => setCancelTarget(row)}
+            >
+              Cancel
+            </Button>
+          )}
         </div>
       ),
     },
@@ -162,14 +182,14 @@ export const SessionsPage = () => {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Training Sessions</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Training Sessions
+          </h2>
           <p className="text-sm text-gray-500">
             Schedule 1-on-1 coach appointments, track schedules and attendance.
           </p>
         </div>
-        <Button onClick={() => setIsBookOpen(true)}>
-          + Book Session
-        </Button>
+        <Button onClick={() => setIsBookOpen(true)}>+ Book Session</Button>
       </div>
 
       <Table

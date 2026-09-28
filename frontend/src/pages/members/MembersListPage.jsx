@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { membersApi } from "../../api/members.api";
 import Table from "../../components/ui/Table";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
+import Badge from "../../components/ui/Badge";
 import ConfirmDialog from "../../components/feedback/ConfirmDialog";
 import MemberFormModal from "./components/MemberFormModal";
 import { formatDate } from "../../utils/dateUtils";
@@ -89,6 +91,11 @@ export const MembersListPage = () => {
     {
       header: "Membership Plan",
       accessor: "membership_type",
+      render: (row) => (
+        <Badge status={row.membership_type || "UNASSIGNED"}>
+          {row.membership_type || "UNASSIGNED"}
+        </Badge>
+      ),
     },
     {
       header: "Phone",
@@ -99,7 +106,7 @@ export const MembersListPage = () => {
       accessor: "gender",
       render: (row) => {
         const gender = row.gender || "";
-        return gender.charAt(0).toUpperCase() + gender.slice(1);
+        return gender ? gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase() : "-";
       },
     },
     {
@@ -112,6 +119,11 @@ export const MembersListPage = () => {
       accessor: "_id",
       render: (row) => (
         <div className="flex items-center gap-2">
+          <Link to={`/members/${row._id}`}>
+            <Button size="sm" variant="ghost">
+              View
+            </Button>
+          </Link>
           <Button
             size="sm"
             variant="secondary"

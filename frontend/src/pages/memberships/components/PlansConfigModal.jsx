@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Modal from "../../../components/ui/Modal";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
@@ -10,18 +10,19 @@ export const PlansConfigModal = ({
   loading = false,
 }) => {
   const [formData, setFormData] = useState({
-    name: "",
+    plan_name: "",
     price: "",
-    durationDays: 30,
+    duration_in_days: 30,
     description: "",
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
-      ...formData,
+      plan_name: formData.plan_name,
       price: Number(formData.price) || 0,
-      durationDays: Number(formData.durationDays) || 30,
+      duration_in_days: Number(formData.duration_in_days) || 30,
+      description: formData.description,
     });
   };
 
@@ -29,12 +30,12 @@ export const PlansConfigModal = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Create Membership Tier">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
-          id="name"
+          id="plan_name"
           label="Plan Title"
           required
-          value={formData.name}
+          value={formData.plan_name}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, name: e.target.value }))
+            setFormData((prev) => ({ ...prev, plan_name: e.target.value }))
           }
           placeholder="e.g. Annual VIP Pass"
         />
@@ -52,14 +53,17 @@ export const PlansConfigModal = ({
             placeholder="e.g. 99"
           />
           <Input
-            id="durationDays"
+            id="duration_in_days"
             label="Duration (Days)"
             type="number"
             min="1"
             required
-            value={formData.durationDays}
+            value={formData.duration_in_days}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, durationDays: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                duration_in_days: e.target.value,
+              }))
             }
             placeholder="e.g. 365"
           />

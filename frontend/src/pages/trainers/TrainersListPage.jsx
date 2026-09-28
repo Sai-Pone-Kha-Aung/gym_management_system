@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { trainersApi } from "../../api/trainers.api";
 import Table from "../../components/ui/Table";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
+import Badge from "../../components/ui/Badge";
 import ConfirmDialog from "../../components/feedback/ConfirmDialog";
 import TrainerFormModal from "./components/TrainerFormModal";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -78,25 +80,45 @@ export const TrainersListPage = () => {
       header: "Trainer",
       accessor: "name",
       render: (row) => (
-        <div>
-          <span className="font-semibold text-gray-900 block">{row.name}</span>
-          <span className="text-xs text-gray-500">{row.email}</span>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
+            {row.name ? row.name.slice(0, 2) : "TR"}
+          </div>
+          <div>
+            <Link
+              to={`/trainers/${row._id}`}
+              className="font-semibold text-gray-900 hover:underline block"
+            >
+              {row.name}
+            </Link>
+            <span className="text-xs text-gray-500">{row.email}</span>
+          </div>
         </div>
       ),
     },
     {
       header: "Specialization",
       accessor: "specialization",
-      render: (row) => (
-        <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 text-xs font-medium">
-          {row.specialization}
-        </span>
-      ),
+      render: (row) => {
+        const spec = Array.isArray(row.specialization)
+          ? row.specialization.join(", ")
+          : row.specialization;
+        return (
+          <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 text-xs font-medium">
+            {spec || "General"}
+          </span>
+        );
+      },
     },
     {
       header: "Experience",
       accessor: "experience",
       render: (row) => `${row.experience || 0} years`,
+    },
+    {
+      header: "Status",
+      accessor: "status",
+      render: (row) => <Badge status={row.status || "ACTIVE"} />,
     },
     {
       header: "Phone",
@@ -107,6 +129,11 @@ export const TrainersListPage = () => {
       accessor: "_id",
       render: (row) => (
         <div className="flex items-center gap-2">
+          <Link to={`/trainers/${row._id}`}>
+            <Button size="sm" variant="ghost">
+              View
+            </Button>
+          </Link>
           <Button
             size="sm"
             variant="secondary"
