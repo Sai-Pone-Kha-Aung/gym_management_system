@@ -53,7 +53,7 @@ export const GET = async (request) => {
 
     const pipeline = [
       { $match: query },
-      { $sort: { data: -1, startTime: -1 } },
+      { $sort: { date: -1, startTime: -1 } },
       {
         $lookup: {
           from: "members",
@@ -63,7 +63,7 @@ export const GET = async (request) => {
               $match: {
                 $expr: {
                   $or: [
-                    { $eq: ["$_id", "_mId"] },
+                    { $eq: ["$_id", "$$mId"] },
                     {
                       $and: [
                         { $eq: [{ $type: "$$mId" }, "string"] },
@@ -89,7 +89,7 @@ export const GET = async (request) => {
               $match: {
                 $expr: {
                   $or: [
-                    { $eq: ["$_id", "_tId"] },
+                    { $eq: ["$_id", "$$tId"] },
                     {
                       $and: [
                         { $eq: [{ $type: "$$tId" }, "string"] },
