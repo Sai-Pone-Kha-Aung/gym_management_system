@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getClientPromise } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
-import { paginationQuery } from "@/lib/pagination";
+import { paginationQuery, paginationAggregate } from "@/lib/pagination";
 import { TRAINING_SESSION_STATUS } from "@/constants";
 import { authorize } from "@/lib/auth";
 
@@ -51,9 +51,74 @@ export const GET = async (request) => {
       if (query.$and) delete query.$or;
     }
 
-    const result = await paginationQuery(
+    const pipeline = [
+      { $match: query },
+      { $sort: { data: -1, startTime: -1 } },
+      {
+        $lookup: {
+          from: "members",
+          let: { mId: "$memberId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ["$_id", "_mId"] },
+                    {
+                      $and: [
+                        { $eq: [{ $type: "$$mId" }, "string"] },
+                        { $eq: [{ $toString: "$_id" }, "$$mId"] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $project: { name: 1, email: 1, phone: 1, status: 1 } },
+          ],
+          as: "member",
+        },
+      },
+      { $unwind: { path: "$member", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "trainers",
+          let: { tId: "$trainerId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ["$_id", "_tId"] },
+                    {
+                      $and: [
+                        { $eq: [{ $type: "$$tId" }, "string"] },
+                        { $eq: [{ $toString: "$_id" }, "$$tId"] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                name: 1,
+                email: 1,
+                phone: 1,
+                status: 1,
+                specialization: 1,
+              },
+            },
+          ],
+          as: "trainer",
+        },
+      },
+      { $unwind: { path: "$trainer", preserveNullAndEmptyArrays: true } },
+    ];
+
+    const result = await paginationAggregate(
       db.collection("training-sessions"),
-      query,
+      pipeline,
       request,
       "training_sessions",
     );
