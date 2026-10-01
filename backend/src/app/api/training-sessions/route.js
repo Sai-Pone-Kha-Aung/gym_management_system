@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getClientPromise } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
-import { paginationQuery, paginationAggregate } from "@/lib/pagination";
+import { paginationQuery, paginationAggregate, escapeRegex } from "@/lib/pagination";
 import { TRAINING_SESSION_STATUS } from "@/constants";
 import { authorize } from "@/lib/auth";
 
@@ -33,7 +33,7 @@ export const GET = async (request) => {
 
     const query = { isDeleted: { $ne: true } };
     if (status) query.status = status.toUpperCase();
-    if (date) query.date = { $regex: normalizeDate(date) };
+    if (date) query.date = { $regex: escapeRegex(normalizeDate(date)) };
     if (trainerId) {
       const tQuery = ObjectId.isValid(trainerId)
         ? { $in: [trainerId, new ObjectId(trainerId)] }

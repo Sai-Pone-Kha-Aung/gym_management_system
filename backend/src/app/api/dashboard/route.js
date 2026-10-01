@@ -13,9 +13,10 @@ export const GET = async (request) => {
     const client = await getClientPromise();
     const db = client.db(process.env.DB_NAME);
 
-    // Target date from query or default to today's UTC/local date (YYYY-MM-DD)
+    // Target date from query (validated as YYYY-MM-DD) or default to today's date
     const targetDateParam = request.nextUrl.searchParams.get("date");
-    const todayStr = targetDateParam || normalizeDate(new Date());
+    const isValidDate = targetDateParam && /^\d{4}-\d{2}-\d{2}$/.test(targetDateParam);
+    const todayStr = isValidDate ? targetDateParam : normalizeDate(new Date());
 
     const startOfDay = new Date(`${todayStr}T00:00:00.000Z`);
     const endOfDay = new Date(`${todayStr}T23:59:59.999Z`);

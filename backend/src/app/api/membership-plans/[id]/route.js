@@ -74,6 +74,9 @@ export const PUT = async (request, { params }) => {
 };
 
 export const DELETE = async (request, { params }) => {
+  const auth = authorize(request, ["ADMIN"]);
+  if (!auth.authorized) return auth.errorResponse;
+
   const { id } = await params;
   const searchParams = request.nextUrl.searchParams;
   const mode =

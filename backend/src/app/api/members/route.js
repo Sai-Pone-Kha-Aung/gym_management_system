@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getClientPromise } from "@/lib/mongodb";
-import { paginationQuery } from "@/lib/pagination";
+import { paginationQuery, escapeRegex } from "@/lib/pagination";
 import { authorize } from "@/lib/auth";
 
 export const GET = async (request) => {
@@ -17,10 +17,11 @@ export const GET = async (request) => {
 
     if (status) query.status = status.toUpperCase();
     if (search) {
+      const sanitized = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
+        { name: { $regex: sanitized, $options: "i" } },
+        { email: { $regex: sanitized, $options: "i" } },
+        { phone: { $regex: sanitized, $options: "i" } },
       ];
     }
 

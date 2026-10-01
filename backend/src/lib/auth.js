@@ -60,38 +60,28 @@ export function getUserFromRequest(request) {
 }
 
 /**
- * Validate authenticated user role from request headers forwareded by middleware.
+ * Validate authenticated user role strictly from cryptographic JWT token.
+ * Prevents client-side header spoofing of x-user-role.
  * @param {Request} request
  * @param {string[]} allowedRoles
  * @return {{authorized: boolean, errorResponse?: NextResponse, user?: {id: string, email:string, role:string}}}
  */
-
 export function authorize(request, allowedRoles = ["ADMIN", "STAFF"]) {
-  let userId = request.headers.get("x-user-id");
-  let userEmail = request.headers.get("x-user-email");
-  let userRole = request.headers.get("x-user-role");
+  const authUser = getUserFromRequest(request);
 
-  // Fallback to token extraction if headers are not present
-  if (!userId || !userRole) {
-    const authUser = getUserFromRequest(request);
-    if (authUser) {
-      userId = authUser.id;
-      userEmail = authUser.email;
-      userRole = authUser.role;
-    }
-  }
-
-  if (!userId || !userRole) {
+  if (!authUser || !authUser.id || !authUser.role) {
     return {
       authorized: false,
       errorResponse: NextResponse.json(
-        { message: "Unauthorized: Missing authentication" },
+        { message: "Unauthorized: Missing or invalid authentication token" },
         { status: 401 },
       ),
     };
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+  const role = String(authUser.role).toUpperCase();
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     return {
       authorized: false,
       errorResponse: NextResponse.json(
@@ -103,6 +93,6 @@ export function authorize(request, allowedRoles = ["ADMIN", "STAFF"]) {
 
   return {
     authorized: true,
-    user: { id: userId, email: userEmail, role: userRole },
+    user: { id: authUser.id, email: authUser.email, role },
   };
 }

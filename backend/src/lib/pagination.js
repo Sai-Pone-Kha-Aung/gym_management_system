@@ -1,3 +1,8 @@
+export function escapeRegex(string) {
+  if (!string || typeof string !== "string") return "";
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function getPaginationParams(request, defaultSize = 10) {
   const searchParams = request.nextUrl.searchParams;
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));

@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 
-const allowedOrigins = ["http://localhost:5173", "http://localhost:3000"];
+const configuredOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim())
+  : [];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  ...configuredOrigins,
+];
 
 const publicRoutes = [
   "/api/auth/login",
@@ -17,24 +24,31 @@ export default function proxy(request) {
   const isAllowedOrigin = origin && allowedOrigins.includes(origin);
 
   //   CORS Preflight (OPTIONS)
-
   if (request.method === "OPTIONS") {
     const preflightHeaders = {
       ...(isAllowedOrigin && { "Access-Control-Allow-Origin": origin }),
-      "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Max-Age": "86400",
     };
     return NextResponse.json({ status: 200 }, { headers: preflightHeaders });
   }
 
-  // 2. Allow Public Routes without JWT
-
+  // 2. Allow Public Routes without JWT (strip spoofed x-user headers)
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),
   );
   if (isPublicRoute) {
-    const response = NextResponse.next();
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.delete("x-user-id");
+    requestHeaders.delete("x-user-email");
+    requestHeaders.delete("x-user-role");
+
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
     if (isAllowedOrigin) {
       response.headers.set("Access-Control-Allow-Origin", origin);
       response.headers.set("Access-Control-Allow-Credentials", "true");

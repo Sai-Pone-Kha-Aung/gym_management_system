@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getClientPromise } from "@/lib/mongodb";
-import { paginationQuery } from "@/lib/pagination";
+import { paginationQuery, escapeRegex } from "@/lib/pagination";
 import { authorize } from "@/lib/auth";
 
 export const GET = async (request) => {
@@ -15,15 +15,16 @@ export const GET = async (request) => {
     const query = { isDeleted: { $ne: true } };
     if (status) query.status = status.toUpperCase();
     if (search) {
+      const sanitized = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { specialization: { $regex: search, $options: "i" } },
+        { name: { $regex: sanitized, $options: "i" } },
+        { email: { $regex: sanitized, $options: "i" } },
+        { phone: { $regex: sanitized, $options: "i" } },
+        { specialization: { $regex: sanitized, $options: "i" } },
       ];
     }
     if (specialization) {
-      query.specialization = { $regex: specialization, $options: "i" };
+      query.specialization = { $regex: escapeRegex(specialization), $options: "i" };
     }
 
     const result = await paginationQuery(
@@ -75,10 +76,24 @@ export const POST = async (request) => {
       phone,
       address,
       gender,
-      date_of_birth: new Date(date_of_birth),
-      specialization: specialization.split(",").map((s) => s.trim()),
-      experience: parseInt(experience),
-      shift: shift.split(",").map((s) => s.trim()),
+      date_of_birth: date_of_birth ? new Date(date_of_birth) : null,
+      specialization: Array.isArray(specialization)
+        ? specialization
+        : typeof specialization === "string"
+        ? specialization
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+      experience: parseInt(experience, 10) || 0,
+      shift: Array.isArray(shift)
+        ? shift
+        : typeof shift === "string"
+        ? shift
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
       status: "ACTIVE",
       createdAt: new Date(),
       updatedAt: new Date(),

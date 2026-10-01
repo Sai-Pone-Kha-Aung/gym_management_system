@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { getClientPromise } from "@/lib/mongodb";
-import { paginationAggregate } from "@/lib/pagination";
+import { paginationAggregate, escapeRegex } from "@/lib/pagination";
 import bcrypt from "bcrypt";
 import { authorize } from "@/lib/auth";
 
 export const GET = async (request) => {
+  const auth = authorize(request, ["ADMIN"]);
+  if (!auth.authorized) return auth.errorResponse;
+
   const status = request.nextUrl.searchParams.get("status");
   const role = request.nextUrl.searchParams.get("role");
   const search = request.nextUrl.searchParams.get("search");
@@ -20,9 +23,10 @@ export const GET = async (request) => {
     if (status) query.status = status.toUpperCase();
     if (role) query.role = role.toUpperCase();
     if (search) {
+      const sanitizedSearch = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { name: { $regex: sanitizedSearch, $options: "i" } },
+        { email: { $regex: sanitizedSearch, $options: "i" } },
       ];
     }
 

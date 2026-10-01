@@ -7,7 +7,7 @@ import {
 } from "@/constants/enum";
 import { ObjectId } from "mongodb";
 
-import { paginationAggregate } from "@/lib/pagination";
+import { paginationAggregate, escapeRegex } from "@/lib/pagination";
 import { authorize } from "@/lib/auth";
 
 export const GET = async (request) => {
@@ -108,12 +108,13 @@ export const GET = async (request) => {
     ];
 
     if (search) {
+      const sanitized = escapeRegex(search);
       pipeline.push({
         $match: {
           $or: [
-            { "member.name": { $regex: search, $options: "i" } },
-            { "member.email": { $regex: search, $options: "i" } },
-            { "plan.plan_name": { $regex: search, $options: "i" } },
+            { "member.name": { $regex: sanitized, $options: "i" } },
+            { "member.email": { $regex: sanitized, $options: "i" } },
+            { "plan.plan_name": { $regex: sanitized, $options: "i" } },
           ],
         },
       });

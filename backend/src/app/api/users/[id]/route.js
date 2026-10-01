@@ -5,6 +5,9 @@ import bcrypt from "bcrypt";
 import { authorize } from "@/lib/auth";
 
 export const GET = async (request, { params }) => {
+  const auth = authorize(request, ["ADMIN"]);
+  if (!auth.authorized) return auth.errorResponse;
+
   const { id } = await params;
 
   try {
@@ -138,6 +141,9 @@ export const PUT = async (request, { params }) => {
 };
 
 export const DELETE = async (request, { params }) => {
+  const auth = authorize(request, ["ADMIN"]);
+  if (!auth.authorized) return auth.errorResponse;
+
   const { id } = await params;
   const searchParams = request.nextUrl.searchParams;
   const mode =
@@ -158,6 +164,13 @@ export const DELETE = async (request, { params }) => {
       return NextResponse.json(
         { message: "User not found" },
         { status: 404 },
+      );
+    }
+
+    if (auth.user?.id && String(user._id) === String(auth.user.id)) {
+      return NextResponse.json(
+        { message: "You cannot delete your own account" },
+        { status: 400 },
       );
     }
 
