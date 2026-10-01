@@ -4,11 +4,21 @@ import { paginationQuery } from "@/lib/pagination";
 import { authorize } from "@/lib/auth";
 
 export const GET = async (request) => {
+  const search = request.nextUrl.searchParams.get("search");
+  const status = request.nextUrl.searchParams.get("status");
+
   try {
     const client = await getClientPromise();
     const db = client.db(process.env.DB_NAME);
 
     const query = { isDeleted: { $ne: true } };
+    if (status) query.status = status.toUpperCase();
+    if (search) {
+      query.$or = [
+        { plan_name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
 
     const result = await paginationQuery(
       db.collection("membership-plans"),

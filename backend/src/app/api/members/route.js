@@ -16,7 +16,13 @@ export const GET = async (request) => {
     };
 
     if (status) query.status = status.toUpperCase();
-    if (search) query.name = { $regex: search, $options: "i" };
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
+    }
 
     const result = await paginationQuery(
       db.collection("members"),

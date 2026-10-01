@@ -18,6 +18,7 @@ export const GET = async (request) => {
     request.nextUrl.searchParams.get("plan_id") ||
     request.nextUrl.searchParams.get("planId");
   const status = request.nextUrl.searchParams.get("status");
+  const search = request.nextUrl.searchParams.get("search");
 
   try {
     const client = await getClientPromise();
@@ -105,6 +106,18 @@ export const GET = async (request) => {
         },
       },
     ];
+
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { "member.name": { $regex: search, $options: "i" } },
+            { "member.email": { $regex: search, $options: "i" } },
+            { "plan.plan_name": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
 
     const result = await paginationAggregate(
       db.collection("memberships"),
