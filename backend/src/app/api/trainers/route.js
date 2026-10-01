@@ -18,6 +18,8 @@ export const GET = async (request) => {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { specialization: { $regex: search, $options: "i" } },
       ];
     }
     if (specialization) {
@@ -73,10 +75,10 @@ export const POST = async (request) => {
       phone,
       address,
       gender,
-      date_of_birth,
-      specialization,
-      experience,
-      shift,
+      date_of_birth: new Date(date_of_birth),
+      specialization: specialization.split(",").map((s) => s.trim()),
+      experience: parseInt(experience),
+      shift: shift.split(",").map((s) => s.trim()),
       status: "ACTIVE",
       createdAt: new Date(),
       updatedAt: new Date(),
