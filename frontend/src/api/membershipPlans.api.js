@@ -12,5 +12,5 @@ export const membershipPlansApi = {
   getById: (id) => client.get(`/api/membership-plans/${id}`),
   create: (data) => client.post("/api/membership-plans", data),
   update: (id, data) => client.put(`/api/membership-plans/${id}`, data),
-  delete: (id) => client.delete(`/api/membership-plans/${id}`),
+  delete: (id, mode) => client.delete(`/api/membership-plans/${id}${mode ? `?mode=${mode}` : ""}`),
 };

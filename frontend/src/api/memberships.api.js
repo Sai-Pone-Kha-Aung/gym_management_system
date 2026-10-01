@@ -12,7 +12,7 @@ export const membershipsApi = {
   getById: (id) => client.get(`/api/memberships/${id}`),
   create: (data) => client.post("/api/memberships", data),
   update: (id, data) => client.put(`/api/memberships/${id}`, data),
-  delete: (id) => client.delete(`/api/memberships/${id}`),
+  delete: (id, mode) => client.delete(`/api/memberships/${id}${mode ? `?mode=${mode}` : ""}`),
 };
 
 export default membershipsApi;

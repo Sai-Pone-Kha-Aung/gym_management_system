@@ -12,5 +12,5 @@ export const membersApi = {
   getById: (id) => client.get(`/api/members/${id}`),
   create: (data) => client.post("/api/members", data),
   update: (id, data) => client.put(`/api/members/${id}`, data),
-  delete: (id) => client.delete(`/api/members/${id}`),
+  delete: (id, mode) => client.delete(`/api/members/${id}${mode ? `?mode=${mode}` : ""}`),
 };

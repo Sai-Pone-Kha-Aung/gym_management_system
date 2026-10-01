@@ -12,5 +12,5 @@ export const trainingSessionsApi = {
   getById: (id) => client.get(`/api/training-sessions/${id}`),
   create: (data) => client.post("/api/training-sessions", data),
   update: (id, data) => client.put(`/api/training-sessions/${id}`, data),
-  delete: (id) => client.delete(`/api/training-sessions/${id}`),
+  delete: (id, mode) => client.delete(`/api/training-sessions/${id}${mode ? `?mode=${mode}` : ""}`),
 };
