@@ -230,6 +230,11 @@ export const DELETE = async (request, { params }) => {
   const mode =
     searchParams.get("mode") ||
     (searchParams.get("hard") === "true" ? "hard" : "soft");
+
+  const requiredRoles = mode === "hard" ? ["ADMIN"] : ["ADMIN", "STAFF"];
+  const auth = authorize(request, requiredRoles);
+  if (!auth.authorized) return auth.errorResponse;
+
   try {
     const client = await getClientPromise();
     const db = client.db(process.env.DB_NAME);

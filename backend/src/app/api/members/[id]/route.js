@@ -162,11 +162,15 @@ export const PUT = async (request, { params }) => {
 export const DELETE = async (request, { params }) => {
   const { id } = await params;
 
-  // 1. Check if the user passed hard=true in query
   const searchParams = request.nextUrl.searchParams;
   const mode =
     searchParams.get("mode") ||
     (searchParams.get("hard") === "true" ? "hard" : "soft");
+
+  // Hard delete is restricted to ADMIN; soft delete is accessible to ADMIN and STAFF
+  const requiredRoles = mode === "hard" ? ["ADMIN"] : ["ADMIN", "STAFF"];
+  const auth = authorize(request, requiredRoles);
+  if (!auth.authorized) return auth.errorResponse;
 
   try {
     const client = await getClientPromise();

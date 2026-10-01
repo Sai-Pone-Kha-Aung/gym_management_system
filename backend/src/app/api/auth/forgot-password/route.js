@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getClientPromise } from "@/lib/mongodb";
-import bcrypt from "bcrypt";
 import crypto from "crypto";
 
 export const POST = async (request) => {
@@ -43,45 +42,8 @@ export const POST = async (request) => {
       );
     }
 
-    // Direct password reset if newPassword is provided
-    if (newPassword) {
-      if (newPassword.length < 6) {
-        return NextResponse.json(
-          { message: "New password must be at least 6 characters long" },
-          { status: 400 },
-        );
-      }
-
-      if (confirmPassword && newPassword !== confirmPassword) {
-        return NextResponse.json(
-          { message: "New password and confirm password do not match" },
-          { status: 400 },
-        );
-      }
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      await db.collection("users").updateOne(
-        { _id: user._id },
-        {
-          $set: {
-            password: hashedPassword,
-            updatedAt: new Date(),
-          },
-          $unset: {
-            resetToken: "",
-            resetTokenExpiry: "",
-          },
-        },
-      );
-
-      return NextResponse.json(
-        { message: "Password updated successfully" },
-        { status: 200 },
-      );
-    }
-
-    // Otherwise, generate a reset token valid for 1 hour
+    // Generate a secure reset token valid for 1 hour.
+    // Password updates must be submitted to /api/auth/reset-password with this token.
     const resetToken = crypto.randomBytes(32).toString("hex");
     const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 

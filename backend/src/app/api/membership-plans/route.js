@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getClientPromise } from "@/lib/mongodb";
-import { paginationQuery } from "@/lib/pagination";
+import { paginationQuery, escapeRegex } from "@/lib/pagination";
 import { authorize } from "@/lib/auth";
 
 export const GET = async (request) => {
@@ -14,9 +14,10 @@ export const GET = async (request) => {
     const query = { isDeleted: { $ne: true } };
     if (status) query.status = status.toUpperCase();
     if (search) {
+      const sanitized = escapeRegex(search);
       query.$or = [
-        { plan_name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
+        { plan_name: { $regex: sanitized, $options: "i" } },
+        { description: { $regex: sanitized, $options: "i" } },
       ];
     }
 

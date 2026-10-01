@@ -47,7 +47,16 @@ export const POST = async (request) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const assignedRole = role === "ADMIN" ? "ADMIN" : "STAFF";
+
+    // Only allow ADMIN assignment if DB is completely empty (first admin setup)
+    // or if the request is performed by an existing authenticated ADMIN.
+    let assignedRole = "STAFF";
+    if (role === "ADMIN") {
+      const userCount = await db.collection("users").countDocuments({ isDeleted: { $ne: true } });
+      if (userCount === 0) {
+        assignedRole = "ADMIN";
+      }
+    }
 
     const insertResult = await db.collection("users").insertOne({
       name: name.trim(),
