@@ -14,6 +14,7 @@ import PlansConfigModal from "./components/PlansConfigModal";
 import { formatDate } from "../../utils/dateUtils";
 import { formatCurrency } from "../../utils/formatters";
 import { useDebounce } from "../../hooks/useDebounce";
+import { CreditCard, Sparkles } from "lucide-react";
 
 export const MembershipsPage = () => {
   const [memberships, setMemberships] = useState([]);
@@ -21,10 +22,20 @@ export const MembershipsPage = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
+  // Filters & Search
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 1,
+    currentPage: 1,
+    size: 10,
+  });
 
   // Modals state
   const [isAssignOpen, setIsAssignOpen] = useState(false);
@@ -32,16 +43,25 @@ export const MembershipsPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const params = {};
+      const params = {
+        page,
+        size: pageSize,
+      };
       if (statusFilter) params.status = statusFilter;
+      if (debouncedSearch) params.search = debouncedSearch;
 
       const [membershipsRes, membersRes, plansRes] = await Promise.all([
-        membershipsApi.getAll(params).catch(() => []),
-        membersApi.getAll().catch(() => []),
-        membershipPlansApi.getAll().catch(() => []),
+        membershipsApi.getAll(params).catch(() => ({})),
+        membersApi.getAll({ size: 100 }).catch(() => []),
+        membershipPlansApi.getAll({ size: 100 }).catch(() => []),
       ]);
 
       const mList = Array.isArray(membershipsRes)
@@ -57,12 +77,28 @@ export const MembershipsPage = () => {
       setMemberships(mList);
       setMembers(memList);
       setPlans(pList);
+
+      if (membershipsRes?.pagination) {
+        setPagination({
+          total: membershipsRes.pagination.total ?? mList.length,
+          totalPages: membershipsRes.pagination.totalPage ?? 1,
+          currentPage: membershipsRes.pagination.currentPage ?? page,
+          size: membershipsRes.pagination.size ?? pageSize,
+        });
+      } else {
+        setPagination({
+          total: mList.length,
+          totalPages: 1,
+          currentPage: 1,
+          size: pageSize,
+        });
+      }
     } catch (err) {
       console.error("Failed to load memberships data:", err);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [page, pageSize, statusFilter, debouncedSearch]);
 
   useEffect(() => {
     loadData();
@@ -108,21 +144,6 @@ export const MembershipsPage = () => {
     }
   };
 
-  const filteredMemberships = memberships.filter((m) => {
-    const memberName =
-      m.member?.name || m.memberId?.name || m.memberName || "";
-    const planName =
-      m.plan_name || m.plan?.plan_name || m.planName || "";
-    const memberEmail =
-      m.member?.email || m.memberId?.email || "";
-    const q = debouncedSearch.toLowerCase();
-    return (
-      memberName.toLowerCase().includes(q) ||
-      planName.toLowerCase().includes(q) ||
-      memberEmail.toLowerCase().includes(q)
-    );
-  });
-
   const columns = [
     {
       header: "Member",
@@ -147,7 +168,9 @@ export const MembershipsPage = () => {
                   {name}
                 </Link>
               ) : (
-                <span className="font-semibold text-gray-900 block">{name}</span>
+                <span className="font-semibold text-gray-900 block">
+                  {name}
+                </span>
               )}
               {email && <span className="text-xs text-gray-500">{email}</span>}
             </div>
@@ -160,10 +183,7 @@ export const MembershipsPage = () => {
       accessor: "plan_name",
       render: (row) => {
         const pName =
-          row.plan_name ||
-          row.plan?.plan_name ||
-          row.planName ||
-          "Membership";
+          row.plan_name || row.plan?.plan_name || row.planName || "Membership";
         return (
           <Link
             to={`/memberships/${row._id}`}
@@ -188,7 +208,10 @@ export const MembershipsPage = () => {
       accessor: "payment_status",
       render: (row) => (
         <div className="flex flex-col gap-1">
-          <Badge status={row.payment_status || "PAID"}>
+          <Badge
+            status={row.payment_status || "PAID"}
+            className="items-center justify-center"
+          >
             {row.payment_status || "PAID"}
           </Badge>
           <span className="text-[11px] text-gray-500">
@@ -204,9 +227,12 @@ export const MembershipsPage = () => {
         const start = row.start_date || row.startDate;
         const end = row.end_date || row.endDate;
         return (
-          <span className="text-xs text-gray-600 block">
-            {formatDate(start)} → {formatDate(end)}
-          </span>
+          <div className="flex flex-col text-xs">
+            <span className="text-gray-900 font-medium">
+              {formatDate(start)}
+            </span>
+            <span className="text-gray-500">to {formatDate(end)}</span>
+          </div>
         );
       },
     },
@@ -222,7 +248,7 @@ export const MembershipsPage = () => {
         <div className="flex items-center gap-2">
           <Link to={`/memberships/${row._id}`}>
             <Button size="sm" variant="ghost">
-              View
+              Details
             </Button>
           </Link>
           <Button
@@ -230,7 +256,7 @@ export const MembershipsPage = () => {
             variant="danger"
             onClick={() => setDeleteTarget(row)}
           >
-            Cancel/Delete
+            Remove
           </Button>
         </div>
       ),
@@ -239,13 +265,29 @@ export const MembershipsPage = () => {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Navigation Tabs between Memberships and Plans */}
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+        <div className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-gray-900 text-white shadow-xs">
+          <CreditCard size={16} />
+          <span>Member Subscriptions</span>
+        </div>
+        <Link
+          to="/membership-plans"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+        >
+          <Sparkles size={16} />
+          <span>Plan Tiers & Packages</span>
+        </Link>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Memberships & Plans
+            Active Memberships
           </h2>
           <p className="text-sm text-gray-500">
-            Track active memberships, subscriptions, renewal dates and billing status.
+            Track active memberships, subscriptions, renewal dates and billing
+            status.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -260,11 +302,13 @@ export const MembershipsPage = () => {
 
       {/* Search and Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Input
-          placeholder="Search by member or plan..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="sm:col-span-2">
+          <Input
+            placeholder="Search by member or plan..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -279,12 +323,23 @@ export const MembershipsPage = () => {
 
       <Table
         columns={columns}
-        data={filteredMemberships}
+        data={memberships}
         emptyMessage={
           loading
             ? "Loading memberships..."
             : "No active or recorded memberships found matching your filters."
         }
+        pagination={{
+          currentPage: page,
+          totalPages: pagination.totalPages,
+          totalItems: pagination.total,
+          pageSize,
+          onPageChange: (newPage) => setPage(newPage),
+          onPageSizeChange: (newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          },
+        }}
       />
 
       <AssignPlanModal

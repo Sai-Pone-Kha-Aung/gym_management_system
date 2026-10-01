@@ -1,23 +1,24 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { usersApi } from "../../api/users.api";
+import { membershipPlansApi } from "../../api/membershipPlans.api";
 import Table from "../../components/ui/Table";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Select from "../../components/ui/Select";
 import Badge from "../../components/ui/Badge";
 import ConfirmDialog from "../../components/feedback/ConfirmDialog";
-import UserFormModal from "./components/UserFormModal";
+import PlansConfigModal from "../memberships/components/PlansConfigModal";
+import { formatCurrency } from "../../utils/formatters";
 import { formatDate } from "../../utils/dateUtils";
 import { useDebounce } from "../../hooks/useDebounce";
+import { CreditCard, Sparkles } from "lucide-react";
 
-export const UsersListPage = () => {
-  const [users, setUsers] = useState([]);
+export const PlansListPage = () => {
+  const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const debouncedSearch = useDebounce(search, 300);
 
@@ -31,18 +32,18 @@ export const UsersListPage = () => {
     size: 10,
   });
 
-  // Modals state
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Reset to page 1 on filter changes
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, roleFilter, statusFilter]);
+  }, [debouncedSearch, statusFilter]);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchPlans = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
@@ -50,52 +51,53 @@ export const UsersListPage = () => {
         size: pageSize,
       };
       if (debouncedSearch) params.search = debouncedSearch;
-      if (roleFilter) params.role = roleFilter;
       if (statusFilter) params.status = statusFilter;
 
-      const res = await usersApi.getAll(params);
-      const userList = Array.isArray(res) ? res : res?.users || [];
-      setUsers(userList);
+      const data = await membershipPlansApi.getAll(params);
+      const planList = Array.isArray(data)
+        ? data
+        : data?.membership_plans || data?.plans || [];
+      setPlans(planList);
 
-      if (res?.pagination) {
+      if (data?.pagination) {
         setPagination({
-          total: res.pagination.total ?? userList.length,
-          totalPages: res.pagination.totalPage ?? 1,
-          currentPage: res.pagination.currentPage ?? page,
-          size: res.pagination.size ?? pageSize,
+          total: data.pagination.total ?? planList.length,
+          totalPages: data.pagination.totalPage ?? 1,
+          currentPage: data.pagination.currentPage ?? page,
+          size: data.pagination.size ?? pageSize,
         });
       } else {
         setPagination({
-          total: userList.length,
+          total: planList.length,
           totalPages: 1,
           currentPage: 1,
           size: pageSize,
         });
       }
     } catch (err) {
-      console.error("Failed to load users:", err);
+      console.error("Failed to load membership plans:", err);
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, debouncedSearch, roleFilter, statusFilter]);
+  }, [page, pageSize, debouncedSearch, statusFilter]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchPlans();
+  }, [fetchPlans]);
 
   const handleCreateOrUpdate = async (formData) => {
     setActionLoading(true);
     try {
-      if (selectedUser?._id) {
-        await usersApi.update(selectedUser._id, formData);
+      if (selectedPlan?._id) {
+        await membershipPlansApi.update(selectedPlan._id, formData);
       } else {
-        await usersApi.create(formData);
+        await membershipPlansApi.create(formData);
       }
-      setIsFormOpen(false);
-      setSelectedUser(null);
-      fetchUsers();
+      setIsModalOpen(false);
+      setSelectedPlan(null);
+      fetchPlans();
     } catch (err) {
-      alert(err.message || "Failed to save user account");
+      alert(err.message || "Failed to save plan tier");
     } finally {
       setActionLoading(false);
     }
@@ -105,11 +107,11 @@ export const UsersListPage = () => {
     if (!deleteTarget) return;
     setActionLoading(true);
     try {
-      await usersApi.delete(deleteTarget._id, "soft");
+      await membershipPlansApi.delete(deleteTarget._id);
       setDeleteTarget(null);
-      fetchUsers();
+      fetchPlans();
     } catch (err) {
-      alert(err.message || "Failed to remove user account");
+      alert(err.message || "Failed to delete plan");
     } finally {
       setActionLoading(false);
     }
@@ -117,29 +119,52 @@ export const UsersListPage = () => {
 
   const columns = [
     {
-      header: "User Account",
-      accessor: "name",
+      header: "Plan Name",
+      accessor: "plan_name",
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
-            {row.name ? row.name.slice(0, 2) : "U"}
+          <div className="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+            <Sparkles size={16} />
           </div>
           <div>
             <Link
-              to={`/users/${row._id}`}
+              to={`/membership-plans/${row._id}`}
               className="font-semibold text-gray-900 hover:underline block"
             >
-              {row.name}
+              {row.plan_name}
             </Link>
-            <span className="text-xs text-gray-500">{row.email}</span>
+            <span className="text-xs text-gray-500">
+              {row.description || "Full access membership package"}
+            </span>
           </div>
         </div>
       ),
     },
     {
-      header: "Role",
-      accessor: "role",
-      render: (row) => <Badge status={row.role || "STAFF"} />,
+      header: "Price",
+      accessor: "price",
+      render: (row) => (
+        <span className="font-semibold text-gray-900">
+          {formatCurrency(row.price)}
+        </span>
+      ),
+    },
+    {
+      header: "Duration",
+      accessor: "duration_in_days",
+      render: (row) => {
+        const days = Number(row.duration_in_days) || 30;
+        let label = `${days} days`;
+        if (days === 30) label = "1 Month (30 days)";
+        else if (days === 90) label = "3 Months (90 days)";
+        else if (days === 180) label = "6 Months (180 days)";
+        else if (days === 365) label = "1 Year (365 days)";
+        return (
+          <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 text-xs font-medium">
+            {label}
+          </span>
+        );
+      },
     },
     {
       header: "Status",
@@ -156,7 +181,7 @@ export const UsersListPage = () => {
       accessor: "_id",
       render: (row) => (
         <div className="flex items-center gap-2">
-          <Link to={`/users/${row._id}`}>
+          <Link to={`/membership-plans/${row._id}`}>
             <Button size="sm" variant="ghost">
               View
             </Button>
@@ -165,8 +190,8 @@ export const UsersListPage = () => {
             size="sm"
             variant="secondary"
             onClick={() => {
-              setSelectedUser(row);
-              setIsFormOpen(true);
+              setSelectedPlan(row);
+              setIsModalOpen(true);
             }}
           >
             Edit
@@ -176,7 +201,7 @@ export const UsersListPage = () => {
             variant="danger"
             onClick={() => setDeleteTarget(row)}
           >
-            Deactivate
+            Delete
           </Button>
         </div>
       ),
@@ -185,42 +210,50 @@ export const UsersListPage = () => {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Navigation Tabs between Memberships and Plans */}
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+        <Link
+          to="/memberships"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+        >
+          <CreditCard size={16} />
+          <span>Member Subscriptions</span>
+        </Link>
+        <div className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-gray-900 text-white shadow-xs">
+          <Sparkles size={16} />
+          <span>Plan Tiers & Packages</span>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Users & Staff Management
+            Membership Plan Tiers
           </h2>
           <p className="text-sm text-gray-500">
-            Manage administrative personnel, front desk staff roles, and access
-            privileges.
+            Configure subscription packages, duration, pricing tiers and member
+            perks.
           </p>
         </div>
         <Button
           onClick={() => {
-            setSelectedUser(null);
-            setIsFormOpen(true);
+            setSelectedPlan(null);
+            setIsModalOpen(true);
           }}
         >
-          + Add Staff User
+          + Create Plan Tier
         </Button>
       </div>
 
       {/* Search and Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Input
-          placeholder="Search by name or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          options={[
-            { value: "", label: "All Roles" },
-            { value: "ADMIN", label: "Admin" },
-            { value: "STAFF", label: "Staff" },
-          ]}
-        />
+        <div className="sm:col-span-2">
+          <Input
+            placeholder="Search plans by title, perks..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -234,9 +267,11 @@ export const UsersListPage = () => {
 
       <Table
         columns={columns}
-        data={users}
+        data={plans}
         emptyMessage={
-          loading ? "Loading users..." : "No users found matching your criteria."
+          loading
+            ? "Loading plan tiers..."
+            : "No membership plans found. Create your first plan tier!"
         }
         pagination={{
           currentPage: page,
@@ -251,14 +286,14 @@ export const UsersListPage = () => {
         }}
       />
 
-      <UserFormModal
-        isOpen={isFormOpen}
+      <PlansConfigModal
+        isOpen={isModalOpen}
         onClose={() => {
-          setIsFormOpen(false);
-          setSelectedUser(null);
+          setIsModalOpen(false);
+          setSelectedPlan(null);
         }}
         onSubmit={handleCreateOrUpdate}
-        initialData={selectedUser}
+        initialData={selectedPlan}
         loading={actionLoading}
       />
 
@@ -266,9 +301,8 @@ export const UsersListPage = () => {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Deactivate / Delete User"
-        message={`Are you sure you want to deactivate ${deleteTarget?.name}? They will lose access to the system.`}
-        confirmText="Deactivate User"
+        title="Delete Plan Tier"
+        message={`Are you sure you want to remove plan tier "${deleteTarget?.plan_name}"?`}
         confirmVariant="danger"
         loading={actionLoading}
       />
@@ -276,4 +310,4 @@ export const UsersListPage = () => {
   );
 };
 
-export default UsersListPage;
+export default PlansListPage;

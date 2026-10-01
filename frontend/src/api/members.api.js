@@ -1,7 +1,14 @@
 import { client } from "./client";
 
 export const membersApi = {
-  getAll: () => client.get("/api/members"),
+  getAll: (params = {}) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") query.append(k, v);
+    });
+    const qs = query.toString();
+    return client.get(`/api/members${qs ? `?${qs}` : ""}`);
+  },
   getById: (id) => client.get(`/api/members/${id}`),
   create: (data) => client.post("/api/members", data),
   update: (id, data) => client.put(`/api/members/${id}`, data),

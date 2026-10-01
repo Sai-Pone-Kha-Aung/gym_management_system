@@ -3,26 +3,9 @@ import { client } from "./client";
 export const usersApi = {
   getAll: (params = {}) => {
     const query = new URLSearchParams();
-
-    switch (params.action) {
-      case "search":
-        query.append("search", params.search);
-        break;
-      case "role":
-        query.append("role", params.role);
-        break;
-      case "status":
-        query.append("status", params.status);
-        break;
-      case "page":
-        query.append("page", params.page);
-        break;
-      case "limit":
-        query.append("limit", params.limit);
-        break;
-      default:
-        break;
-    }
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") query.append(k, v);
+    });
     const queryString = query.toString();
     return client.get(`/api/users${queryString ? `?${queryString}` : ""}`);
   },

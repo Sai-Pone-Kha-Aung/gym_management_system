@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "../../../components/ui/Modal";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
@@ -7,6 +7,7 @@ export const PlansConfigModal = ({
   isOpen,
   onClose,
   onSubmit,
+  initialData = null,
   loading = false,
 }) => {
   const [formData, setFormData] = useState({
@@ -15,6 +16,24 @@ export const PlansConfigModal = ({
     duration_in_days: 30,
     description: "",
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        plan_name: initialData.plan_name || "",
+        price: initialData.price || "",
+        duration_in_days: initialData.duration_in_days || 30,
+        description: initialData.description || "",
+      });
+    } else {
+      setFormData({
+        plan_name: "",
+        price: "",
+        duration_in_days: 30,
+        description: "",
+      });
+    }
+  }, [initialData, isOpen]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -26,8 +45,14 @@ export const PlansConfigModal = ({
     });
   };
 
+  const isEditing = Boolean(initialData?._id);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Membership Tier">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? "Edit Membership Tier" : "Create Membership Tier"}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           id="plan_name"
@@ -45,6 +70,7 @@ export const PlansConfigModal = ({
             label="Price ($)"
             type="number"
             min="0"
+            step="0.01"
             required
             value={formData.price}
             onChange={(e) =>
@@ -83,7 +109,13 @@ export const PlansConfigModal = ({
             Cancel
           </Button>
           <Button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Save Plan Tier"}
+            {loading
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+              ? "Save Changes"
+              : "Save Plan Tier"}
           </Button>
         </div>
       </form>
