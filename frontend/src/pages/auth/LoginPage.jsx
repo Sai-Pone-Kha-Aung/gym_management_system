@@ -18,9 +18,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       if (login) {
-        await login({ email, password }).catch(() => {
-          // If backend auth endpoint is not active yet, let them in for dev prototype
-        });
+        await login({ email, password });
       }
       navigate("/dashboard");
     } catch (err) {
