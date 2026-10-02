@@ -23,7 +23,7 @@ export const DashboardPage = () => {
             totalTrainers: data.kpis?.totalTrainers ?? 0,
             activePlans: data.kpis?.activeMemberships ?? 0,
           });
-          setTodaySessions(data.todaySessions || []);
+          setTodaySessions(data.todayAgenda || []);
         }
       })
       .catch((err) => {

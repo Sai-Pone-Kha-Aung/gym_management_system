@@ -1,6 +1,12 @@
 import React from "react";
+import Pagination from "./Pagination";
 
-export const Table = ({ columns, data = [], emptyMessage = "No records found" }) => {
+export const Table = ({
+  columns,
+  data = [],
+  emptyMessage = "No records found",
+  pagination = null,
+}) => {
   return (
     <div className="overflow-x-auto w-full border border-gray-200 rounded-xl bg-white shadow-xs">
       <table className="w-full text-left text-sm text-gray-600">
@@ -36,8 +42,14 @@ export const Table = ({ columns, data = [], emptyMessage = "No records found" })
           )}
         </tbody>
       </table>
+      {pagination && (
+        <div className="border-t border-gray-200 px-4 py-2 bg-gray-50/50">
+          <Pagination {...pagination} />
+        </div>
+      )}
     </div>
   );
 };
 
 export default Table;
+

@@ -23,14 +23,15 @@ export const TodayAgenda = ({ sessions = [] }) => {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900">
-                    {session.memberId?.name || session.memberName || "Member"}
+                    {session.member.name || "Member"}
                   </h4>
                   <p className="text-xs text-gray-500">
-                    Trainer: {session.trainerId?.name || session.trainerName || "Trainer"} • {session.duration || 60} mins
+                    Trainer: {session.trainer?.name || "Trainer"} •{" "}
+                    {session.duration || 60} mins
                   </p>
                 </div>
               </div>
-              <Badge status={session.status || "Scheduled"} />
+              <Badge status={session.status || "SCHEDULED"} />
             </div>
           ))}
         </div>

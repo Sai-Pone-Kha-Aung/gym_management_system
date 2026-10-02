@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "../../../components/ui/Modal";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
@@ -7,34 +7,60 @@ export const PlansConfigModal = ({
   isOpen,
   onClose,
   onSubmit,
+  initialData = null,
   loading = false,
 }) => {
   const [formData, setFormData] = useState({
-    name: "",
+    plan_name: "",
     price: "",
-    durationDays: 30,
+    duration_in_days: 30,
     description: "",
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        plan_name: initialData.plan_name || "",
+        price: initialData.price || "",
+        duration_in_days: initialData.duration_in_days || 30,
+        description: initialData.description || "",
+      });
+    } else {
+      setFormData({
+        plan_name: "",
+        price: "",
+        duration_in_days: 30,
+        description: "",
+      });
+    }
+  }, [initialData, isOpen]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
-      ...formData,
+      plan_name: formData.plan_name,
       price: Number(formData.price) || 0,
-      durationDays: Number(formData.durationDays) || 30,
+      duration_in_days: Number(formData.duration_in_days) || 30,
+      description: formData.description,
     });
   };
 
+  const isEditing = Boolean(initialData?._id);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Membership Tier">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? "Edit Membership Tier" : "Create Membership Tier"}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
-          id="name"
+          id="plan_name"
           label="Plan Title"
           required
-          value={formData.name}
+          value={formData.plan_name}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, name: e.target.value }))
+            setFormData((prev) => ({ ...prev, plan_name: e.target.value }))
           }
           placeholder="e.g. Annual VIP Pass"
         />
@@ -44,6 +70,7 @@ export const PlansConfigModal = ({
             label="Price ($)"
             type="number"
             min="0"
+            step="0.01"
             required
             value={formData.price}
             onChange={(e) =>
@@ -52,14 +79,17 @@ export const PlansConfigModal = ({
             placeholder="e.g. 99"
           />
           <Input
-            id="durationDays"
+            id="duration_in_days"
             label="Duration (Days)"
             type="number"
             min="1"
             required
-            value={formData.durationDays}
+            value={formData.duration_in_days}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, durationDays: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                duration_in_days: e.target.value,
+              }))
             }
             placeholder="e.g. 365"
           />
@@ -79,7 +109,13 @@ export const PlansConfigModal = ({
             Cancel
           </Button>
           <Button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Save Plan Tier"}
+            {loading
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+              ? "Save Changes"
+              : "Save Plan Tier"}
           </Button>
         </div>
       </form>

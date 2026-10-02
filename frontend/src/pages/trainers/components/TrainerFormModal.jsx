@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Modal from "../../../components/ui/Modal";
 import Input from "../../../components/ui/Input";
+import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
 
 export const TrainerFormModal = ({
@@ -16,16 +17,34 @@ export const TrainerFormModal = ({
     phone: "",
     specialization: "",
     experience: "",
+    gender: "male",
+    dateOfBirth: "",
+    address: "",
+    shift: "Morning",
   });
 
   useEffect(() => {
     if (initialData) {
+      const rawDob = initialData.date_of_birth || initialData.dateOfBirth;
+      const spec = Array.isArray(initialData.specialization)
+        ? initialData.specialization.join(", ")
+        : initialData.specialization || "";
+      const sh = Array.isArray(initialData.shift)
+        ? initialData.shift.join(", ")
+        : initialData.shift || "Morning";
+
       setFormData({
         name: initialData.name || "",
         email: initialData.email || "",
         phone: initialData.phone || "",
-        specialization: initialData.specialization || "",
+        specialization: spec,
         experience: initialData.experience ?? "",
+        gender: initialData.gender?.toLowerCase() || "male",
+        dateOfBirth: rawDob
+          ? new Date(rawDob).toISOString().split("T")[0]
+          : "",
+        address: initialData.address || "",
+        shift: sh,
       });
     } else {
       setFormData({
@@ -34,6 +53,10 @@ export const TrainerFormModal = ({
         phone: "",
         specialization: "",
         experience: "",
+        gender: "male",
+        dateOfBirth: "",
+        address: "",
+        shift: "Morning",
       });
     }
   }, [initialData, isOpen]);
@@ -48,6 +71,7 @@ export const TrainerFormModal = ({
     onSubmit({
       ...formData,
       experience: Number(formData.experience) || 0,
+      date_of_birth: formData.dateOfBirth,
     });
   };
 
@@ -66,42 +90,89 @@ export const TrainerFormModal = ({
           onChange={handleChange}
           placeholder="e.g. Marcus Vance"
         />
-        <Input
-          id="email"
-          label="Email Address"
-          type="email"
-          required
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="marcus@gym.com"
-        />
-        <Input
-          id="phone"
-          label="Phone Number"
-          type="tel"
-          required
-          value={formData.phone}
-          onChange={handleChange}
-          placeholder="e.g. 555-0184"
-        />
-        <Input
-          id="specialization"
-          label="Specialization"
-          required
-          value={formData.specialization}
-          onChange={handleChange}
-          placeholder="e.g. Powerlifting, CrossFit, Rehab"
-        />
-        <Input
-          id="experience"
-          label="Years of Experience"
-          type="number"
-          min="0"
-          required
-          value={formData.experience}
-          onChange={handleChange}
-          placeholder="e.g. 5"
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            id="email"
+            label="Email Address"
+            type="email"
+            required
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="marcus@gym.com"
+          />
+          <Input
+            id="phone"
+            label="Phone Number"
+            type="tel"
+            required
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="e.g. 555-0184"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            id="specialization"
+            label="Specialization"
+            required
+            value={formData.specialization}
+            onChange={handleChange}
+            placeholder="e.g. Powerlifting, CrossFit"
+          />
+          <Input
+            id="experience"
+            label="Years of Experience"
+            type="number"
+            min="0"
+            required
+            value={formData.experience}
+            onChange={handleChange}
+            placeholder="e.g. 5"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            id="gender"
+            label="Gender"
+            value={formData.gender}
+            onChange={handleChange}
+            options={[
+              { value: "male", label: "Male" },
+              { value: "female", label: "Female" },
+              { value: "other", label: "Other" },
+            ]}
+          />
+          <Input
+            id="dateOfBirth"
+            label="Date of Birth"
+            type="date"
+            value={formData.dateOfBirth}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            id="shift"
+            label="Work Shift"
+            value={formData.shift}
+            onChange={handleChange}
+            options={[
+              { value: "Morning", label: "Morning (06:00 - 14:00)" },
+              { value: "Evening", label: "Evening (14:00 - 22:00)" },
+              { value: "Full-day", label: "Full-day" },
+            ]}
+          />
+          <Input
+            id="address"
+            label="Address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="e.g. 450 Gym St, CA"
+          />
+        </div>
 
         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
           <Button variant="secondary" onClick={onClose} disabled={loading}>

@@ -4,6 +4,7 @@ import {
   Users,
   Dumbbell,
   CreditCard,
+  Sparkles,
   CalendarDays,
   UserCog,
   LogOut,
@@ -36,6 +37,11 @@ export const Sidebar = () => {
       to: "/memberships",
       label: "Memberships",
       icon: <CreditCard size={18} />,
+    },
+    {
+      to: "/membership-plans",
+      label: "Membership Plans",
+      icon: <Sparkles size={18} />,
     },
     {
       to: "/sessions",

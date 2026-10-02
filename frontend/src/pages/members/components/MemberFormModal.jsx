@@ -15,28 +15,32 @@ export const MemberFormModal = ({
     name: "",
     email: "",
     phone: "",
-    gender: "Male",
+    gender: "male",
     dateOfBirth: "",
+    address: "",
   });
 
   useEffect(() => {
     if (initialData) {
+      const rawDob = initialData.date_of_birth || initialData.dateOfBirth;
       setFormData({
         name: initialData.name || "",
         email: initialData.email || "",
         phone: initialData.phone || "",
-        gender: initialData.gender || "Male",
-        dateOfBirth: initialData.dateOfBirth
-          ? new Date(initialData.dateOfBirth).toISOString().split("T")[0]
+        gender: initialData.gender?.toLowerCase() || "male",
+        dateOfBirth: rawDob
+          ? new Date(rawDob).toISOString().split("T")[0]
           : "",
+        address: initialData.address || "",
       });
     } else {
       setFormData({
         name: "",
         email: "",
         phone: "",
-        gender: "Male",
+        gender: "male",
         dateOfBirth: "",
+        address: "",
       });
     }
   }, [initialData, isOpen]);
@@ -48,7 +52,10 @@ export const MemberFormModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      date_of_birth: formData.dateOfBirth,
+    });
   };
 
   return (
@@ -91,9 +98,9 @@ export const MemberFormModal = ({
             value={formData.gender}
             onChange={handleChange}
             options={[
-              { value: "Male", label: "Male" },
-              { value: "Female", label: "Female" },
-              { value: "Other", label: "Other" },
+              { value: "male", label: "Male" },
+              { value: "female", label: "Female" },
+              { value: "other", label: "Other" },
             ]}
           />
           <Input
@@ -104,6 +111,13 @@ export const MemberFormModal = ({
             onChange={handleChange}
           />
         </div>
+        <Input
+          id="address"
+          label="Address"
+          value={formData.address}
+          onChange={handleChange}
+          placeholder="e.g. 1200 Grand Ave, Los Angeles, CA"
+        />
 
         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
           <Button variant="secondary" onClick={onClose} disabled={loading}>
