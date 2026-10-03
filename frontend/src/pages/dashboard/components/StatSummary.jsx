@@ -1,5 +1,5 @@
-import React from "react";
 import StatCard from "../../../components/ui/StatCard";
+import {UserGroup, Dumbbell, CreditCard} from "lucide"
 
 export const StatSummary = ({ stats = {} }) => {
   return (
@@ -7,19 +7,19 @@ export const StatSummary = ({ stats = {} }) => {
       <StatCard
         title="Total Members"
         value={stats.totalMembers ?? "--"}
-        icon="👥"
+        icon={<UserGroup />}
         subtitle="Registered athletes"
       />
       <StatCard
         title="Active Trainers"
         value={stats.totalTrainers ?? "--"}
-        icon="🏋️"
+        icon={<Dumbbell />}
         subtitle="Certified staff"
       />
       <StatCard
         title="Active Memberships"
         value={stats.activePlans ?? stats.activeMemberships ?? "--"}
-        icon="💳"
+        icon={<CreditCard />}
         subtitle="Current active plans"
       />
     </div>
