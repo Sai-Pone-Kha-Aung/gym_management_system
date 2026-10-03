@@ -5,5 +5,5 @@ GYM-Management-System
 Gym Management System Proposal.md
 *.mjs
 *.md
-!./README.md
+!/README.md
 *.sh
