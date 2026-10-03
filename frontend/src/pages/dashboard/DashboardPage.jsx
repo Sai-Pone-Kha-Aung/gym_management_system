@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import StatSummary from "./components/StatSummary";
 import TodayAgenda from "./components/TodayAgenda";
 import { dashboardApi } from "../../api/dashboard.api";
