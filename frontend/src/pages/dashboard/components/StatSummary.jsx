@@ -1,5 +1,5 @@
 import StatCard from "../../../components/ui/StatCard";
-import {UserGroup, Dumbbell, CreditCard} from "lucide"
+import { UserGroup, Dumbbell, CreditCard } from "lucide-react";
 
 export const StatSummary = ({ stats = {} }) => {
   return (
