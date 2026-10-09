@@ -75,7 +75,7 @@ Image files are located in the [docs](docs/) folder.
 ![Members](./docs/members-list.png)
 ![Member Details](./docs/member-details.png)
 ![Trainer](./docs/trainers-list.png)
-![Trainer Details](./docs/trainers-details.png)
+![Trainer Details](./docs/trainer-details.png)
 ![Membership](./docs/memberships-list.png)
 ![Membership Plan](./docs/membershipsPlans-list.png)
 ![Membership Plan](./docs/membershipsPlan-details.png)
